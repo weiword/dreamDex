@@ -1,0 +1,58 @@
+name: Refresh Terraforms data (weekly)
+
+on:
+  schedule:
+    # Every Monday 06:00 UTC. (min hour day-of-month month day-of-week)
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      max_tokens:
+        description: "Limit token count (blank = all; e.g. 5 for a quick test)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-terraforms-data
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350          # under the 6h hard cap
+    steps:
+      - name: Checkout code (main)
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install "web3>=6" eth-abi
+
+      - name: Build terraformsData.bin + index
+        env:
+          ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}   # set in repo Settings -> Secrets
+          MAX_TOKENS:  ${{ github.event.inputs.max_tokens }}
+          WORKERS:     "4"      # fewer concurrent threads
+          RPS:         "12"     # global cap on requests/sec (free-tier safe; raise on paid tiers)
+        run: |
+          python build_terraforms.py --output data/terraformsData.bin
+          ls -lh data/
+
+      - name: Publish to the data branch (single parentless commit -> flat history, no copies)
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Hash the two files into git's object store and assemble a tree with
+          # them at the branch ROOT (so the raw URL is .../data/<file>).
+          bin=$(git hash-object -w data/terraformsData.bin)
+          idx=$(git hash-object -w data/terraformsData_index.json)
+          tree=$(printf '100644 blob %s\tterraformsData.bin\n100644 blob %s\tterraformsData_index.json\n' "$bin" "$idx" | git mktree)
+          # commit-tree with NO parent => a single parentless commit each run.
+          commit=$(git commit-tree "$tree" -m "data: weekly refresh $(date -u +%Y-%m-%d)")
+          git push --force origin "$commit:refs/heads/data"
