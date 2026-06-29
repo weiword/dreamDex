@@ -1,6 +1,4 @@
 Change Requests
 -3d map
--terrain scale to flat
 -custom heightmap -> terraform mode
--3d background color click on 2d?
 -random parcel for regular domain visit
