@@ -1,4 +1,3 @@
 Change Requests
--3d map
--custom heightmap -> terraform mode
--random parcel for regular domain visit
+-custom heightmap -> terraform mode?
+-random parcel for regular domain visit?
