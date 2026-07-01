@@ -1,3 +1,4 @@
 Change Requests
 -custom heightmap -> terraform mode?
 -random parcel for regular domain visit?
+-mobile map issue
