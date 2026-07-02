@@ -1,4 +1,4 @@
-# [dreamdex]
+# ▟╔㆔⍝m▟㆔✗
 
 A single-file, in-browser renderer and explorer for **[Terraforms by Mathcastles](https://opensea.io/collection/terraforms)** — the fully on-chain land-art collection. DreamDex faithfully re-creates the contract's renderer (Terrain, Daydream, Terraformed, and Origin modes, both the v0 and v2 engines) in plain HTML/JS/SVG, adds a real-time 3D view, a daydream paint tool, and a fast way to browse every parcel in the collection.
 
