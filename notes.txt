@@ -1,4 +1,4 @@
 Change Requests
 -custom heightmap -> terraform mode?
--random parcel for regular domain visit?
--mobile map issue
+- background color change for 3d and view map on random, 
+- add listings
