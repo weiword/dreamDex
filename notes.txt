@@ -1,4 +1,3 @@
 Change Requests
 -custom heightmap -> terraform mode?
-- background color change for 3d and view map on random, 
-- add listings
+- 830 parcel blade is off
