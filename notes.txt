@@ -1,4 +1,2 @@
 Change Requests
--custom heightmap -> terraform mode?
-- 830 parcel blade is off
-need cronjob for github action push
+- 830 parcel blade is off?
