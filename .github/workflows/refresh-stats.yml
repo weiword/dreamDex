@@ -1,0 +1,56 @@
+name: Refresh OpenSea stats (5 min)
+
+on:
+  schedule:
+    # Every 5 minutes. NOTE: GitHub's shortest cron interval is 5 min, and runs
+    # can be delayed several minutes under load. Free/unlimited on public repos;
+    # counts against Actions minutes on private repos.
+    - cron: "*/5 * * * *"
+  workflow_dispatch:        # lets you run it manually to test
+
+permissions:
+  contents: write
+
+concurrency:
+  # if a run is still going when the next fires, skip the new one
+  group: refresh-opensea-stats
+  cancel-in-progress: false
+
+jobs:
+  stats:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code (main)
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch OpenSea stats + listings
+        env:
+          OPENSEA_API_KEY: ${{ secrets.OPENSEA_API_KEY }}   # set in repo Settings -> Secrets
+          COLLECTION_SLUG: "terraforms"                      # <-- verify this slug on OpenSea
+          CHAIN: "ethereum"
+          OUTDIR: "stats"
+        run: |
+          python build_stats.py
+          echo "---- stats/stats.json ----"; cat stats/stats.json; echo
+          ls -lh stats/
+
+      - name: Publish to the stats branch (flat, single parentless commit)
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Hash both json files into git's object store; build a tree with them
+          # at the branch ROOT so the raw URLs are .../stats/<file>.
+          s=$(git hash-object -w stats/stats.json)
+          l=$(git hash-object -w stats/listings.json)
+          v=$(git hash-object -w stats/sales.json)
+          o=$(git hash-object -w stats/owners.json)
+          tree=$(printf '100644 blob %s\tstats.json\n100644 blob %s\tlistings.json\n100644 blob %s\tsales.json\n100644 blob %s\towners.json\n' "$s" "$l" "$v" "$o" | git mktree)
+          # commit-tree with NO parent => a fresh flat commit each run (no history bloat).
+          commit=$(git commit-tree "$tree" -m "stats: $(date -u +%Y-%m-%dT%H:%M:%SZ)")
+          git push --force origin "$commit:refs/heads/stats"
